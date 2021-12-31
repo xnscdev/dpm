@@ -35,7 +35,7 @@ static const struct option longopts[] = {
 static void
 usage (void)
 {
-  fprintf (stderr, "Usage: dpm -i PACKAGES\n");
+  fprintf (stderr, "Usage: dpm [-i] PACKAGES\n       dpm [-h | -v]\n");
 }
 
 static void
@@ -47,8 +47,14 @@ version (void)
 int
 main (int argc, char **argv)
 {
+  enum pkg_op pkg_option;
   int opt;
   int i;
+  if (argc == 1)
+    {
+      usage ();
+      exit (1);
+    }
   while ((opt = getopt_long (argc, argv, "hiv", longopts, NULL)) != -1)
     {
       switch (opt)
@@ -64,22 +70,27 @@ main (int argc, char **argv)
 	  exit (0);
 	}
     }
-  if (pkg_option == PKG_NONE)
-    error (1, 0, "no package operation specified");
 
   argc -= optind;
   argv += optind;
   if (!argc)
     error (1, 0, "no packages specified");
-  packages = calloc (argc + 1, sizeof (struct package *));
+  packages = xcalloc (argc + 1, sizeof (struct package_req *));
   for (i = 0; i < argc; i++)
     {
       char *package = xstrdup (argv[i]);
       char *equals = strchr (package, '=');
-      packages[i] = calloc (1, sizeof (struct package));
+      packages[i] = xcalloc (1, sizeof (struct package_req));
       packages[i]->name = package;
       if (equals != NULL)
-	packages[i]->reqversion = equals + 1;
+	packages[i]->version = equals + 1;
+    }
+
+  switch (pkg_option)
+    {
+    case PKG_INSTALL:
+      pkg_install ();
+      break;
     }
   return 0;
 }

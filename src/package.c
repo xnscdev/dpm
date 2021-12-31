@@ -19,6 +19,17 @@
 #endif
 
 #include "package.h"
+#include "repo.h"
 
-enum pkg_op pkg_option;
-struct package **packages;
+struct package_req **packages;
+struct package_stack package_stack;
+
+void
+pkg_install (void)
+{
+  int i;
+  repo_load ();
+  for (i = 0; packages[i]; i++)
+    {
+    }
+}

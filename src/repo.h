@@ -1,4 +1,4 @@
-/* package.h -- This file is part of DPM.
+/* repo.h -- This file is part of DPM.
    Copyright (C) 2021 XNSC
 
    DPM is free software: you can redistribute it and/or modify
@@ -14,40 +14,9 @@
    You should have received a copy of the GNU General Public License
    along with DPM. If not, see <https://www.gnu.org/licenses/>. */
 
-#ifndef __PACKAGE_H
-#define __PACKAGE_H
+#ifndef __REPO_H
+#define __REPO_H
 
-#include <stddef.h>
-
-enum pkg_op
-{
-  PKG_INSTALL
-};
-
-struct package_req
-{
-  char *name;
-  char *version;
-};
-
-struct package
-{
-  char *name;
-  char *version;
-  char *repo;
-  struct package **deps;
-  size_t ndeps;
-};
-
-struct package_stack
-{
-  struct package **packages;
-  size_t len;
-};
-
-extern struct package_req **packages;
-extern struct package_stack package_stack;
-
-void pkg_install (void);
+void repo_load (void);
 
 #endif
