@@ -17,7 +17,7 @@
 #ifndef __PACKAGE_H
 #define __PACKAGE_H
 
-#include <stddef.h>
+#include <stdio.h>
 
 enum pkg_op
 {
@@ -34,9 +34,7 @@ struct package
 {
   char *name;
   char *version;
-  char *repo;
-  struct package **deps;
-  size_t ndeps;
+  FILE *archive;
 };
 
 struct package_stack
@@ -48,6 +46,7 @@ struct package_stack
 extern struct package_req **packages;
 extern struct package_stack package_stack;
 
+void pkg_extract (struct package *package);
 void pkg_install (void);
 
 #endif

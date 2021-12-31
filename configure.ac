@@ -23,5 +23,13 @@ esac], [adl_RECURSIVE_EVAL([$sysconfdir/dpm], [config_dir])])
 AC_DEFINE_UNQUOTED([REPO_LIST_PATH], ["$config_dir/repo"],
 [Path to the repository list file])
 
+PKG_CHECK_MODULES([LIBARCHIVE], [libarchive >= 3.0])
+AC_SUBST([LIBARCHIVE_CFLAGS])
+AC_SUBST([LIBARCHIVE_LIBS])
+
+PKG_CHECK_MODULES([CURL], [libcurl])
+AC_SUBST([CURL_CFLAGS])
+AC_SUBST([CURL_LIBS])
+
 AC_CONFIG_FILES([Makefile lib/Makefile src/Makefile])
 AC_OUTPUT

@@ -73,8 +73,6 @@ main (int argc, char **argv)
 
   argc -= optind;
   argv += optind;
-  if (!argc)
-    error (1, 0, "no packages specified");
   packages = xcalloc (argc + 1, sizeof (struct package_req *));
   for (i = 0; i < argc; i++)
     {

@@ -1,14 +1,18 @@
 AM_CPPFLAGS = -D_GNU_SOURCE -I$(top_srcdir)/lib -I$(top_builddir)/lib
-AM_CFLAGS = -std=gnu11 -Wall -pedantic -Werror=implicit
+AM_CFLAGS = -std=gnu11 -Wall -pedantic -Werror=implicit \
+	$(CURL_CFLAGS) $(LIBARCHIVE_CFLAGS)
 
 bin_PROGRAMS = dpm
 
 dpm_SOURCES =		\
+	download.c	\
+	download.h	\
+	install.c	\
 	main.c		\
 	package.c	\
 	package.h	\
 	repo.c		\
 	repo.h
 
-dpm_LDADD = $(top_builddir)/lib/libgnu.a \
-	$(LIB_HARD_LOCALE) $(LIB_MBRTOWC) $(LIB_SETLOCALE_NULL) $(LIBINTL)
+dpm_LDADD = $(top_builddir)/lib/libgnu.a $(LIB_HARD_LOCALE) $(LIB_MBRTOWC) \
+	$(LIB_SETLOCALE_NULL) $(LIBINTL) $(CURL_LIBS) $(LIBARCHIVE_LIBS)

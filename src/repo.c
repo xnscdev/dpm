@@ -25,6 +25,9 @@
 #include <stdlib.h>
 #include <string.h>
 #include <xalloc.h>
+#include "download.h"
+#include "package.h"
+#include "repo.h"
 
 static char **repo_list;
 static size_t repo_count;
@@ -59,4 +62,56 @@ repo_load (void)
     }
   fclose (file);
   free (line);
+}
+
+struct package *
+repo_search_package (struct package_req *req)
+{
+  struct package *package;
+  size_t i;
+  FILE *archive = tmpfile ();
+  if (!archive)
+    return NULL;
+  for (i = 0; i < repo_count; i++)
+    {
+      char *url;
+      CURLcode ret;
+      if (!req->version)
+	{
+	  char *latesturl;
+	  char *buffer;
+	  size_t len;
+	  asprintf (&latesturl, "%s/%s/LATEST", repo_list[i], req->name);
+	  ret = download_to_buffer ((void **) &buffer, latesturl);
+	  free (latesturl);
+	  if (ret != CURLE_OK)
+	    {
+	      free (buffer);
+	      fclose (archive);
+	      return NULL;
+	    }
+	  len = strlen (buffer) - 1;
+	  if (buffer[len] == '\n')
+	    buffer[len] = '\0';
+	  req->version = buffer;
+	}
+
+      asprintf (&url, "%s/%s/%s-%s.dpm", repo_list[i], req->name,
+		req->name, req->version);
+      ret = download_to_file (archive, url);
+      free (url);
+      if (ret != CURLE_OK)
+	{
+	  fclose (archive);
+	  return NULL;
+	}
+      rewind (archive);
+
+      package = xcalloc (1, sizeof (struct package));
+      package->name = xstrdup (req->name);
+      package->version = xstrdup (req->version);
+      package->archive = archive;
+      return package;
+    }
+  return NULL;
 }

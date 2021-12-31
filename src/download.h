@@ -1,4 +1,4 @@
-/* repo.h -- This file is part of DPM.
+/* download.h -- This file is part of DPM.
    Copyright (C) 2021 XNSC
 
    DPM is free software: you can redistribute it and/or modify
@@ -14,12 +14,14 @@
    You should have received a copy of the GNU General Public License
    along with DPM. If not, see <https://www.gnu.org/licenses/>. */
 
-#ifndef __REPO_H
-#define __REPO_H
+#ifndef __DOWNLOAD_H
+#define __DOWNLOAD_H
 
-#include "package.h"
+#include <curl/curl.h>
 
-void repo_load (void);
-struct package *repo_search_package (struct package_req *req);
+CURLcode download_data (void *data, const char *url,
+			size_t (*callback) (void *, size_t, size_t, void *));
+CURLcode download_to_file (FILE *file, const char *url);
+CURLcode download_to_buffer (void **buffer, const char *url);
 
 #endif
