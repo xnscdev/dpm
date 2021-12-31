@@ -1,0 +1,11 @@
+._*
+*~
+.DS_Store
+
+build
+build-aux
+aclocal.m4
+autom4te.cache
+Makefile.in
+configure
+config.h.in
