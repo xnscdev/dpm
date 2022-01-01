@@ -19,8 +19,6 @@
 
 #include <curl/curl.h>
 
-CURLcode download_data (void *data, const char *url,
-			size_t (*callback) (void *, size_t, size_t, void *));
 CURLcode download_to_file (FILE *file, const char *url);
 CURLcode download_to_buffer (void **buffer, const char *url);
 

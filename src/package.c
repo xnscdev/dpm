@@ -30,6 +30,9 @@
 #include <string.h>
 #include <xalloc.h>
 #include "package.h"
+#include "repo.h"
+
+#define BUFFER_SIZE 4096
 
 #define ARCHIVE_FLAGS (ARCHIVE_EXTRACT_TIME		\
 		       | ARCHIVE_EXTRACT_PERM		\
@@ -45,8 +48,10 @@
 
 struct package_req **packages;
 struct package_stack package_stack;
+char *output_dir;
 
 static struct archive *curr_archive;
+static char ar_buffer[BUFFER_SIZE];
 
 static char *
 read_file_string (const char *path)
@@ -72,33 +77,47 @@ add_archive_entry (struct archive *ar, const struct stat *st, unsigned int type,
 		   const char *name, const char *path)
 {
   struct archive_entry *entry = archive_entry_new ();
-  FILE *file;
-  char *buffer;
   size_t len;
   struct stat stat;
 
   if (!st)
     {
       st = &stat;
-      if (stat (path, (struct stat *) st) == -1)
+      if (lstat (path, (struct stat *) st) == -1)
 	return -1;
     }
 
+  if (type == AE_IFDIR)
+    len = 0;
+  else
+    len = st->st_size;
   archive_entry_set_pathname (entry, name);
-  archive_entry_set_size (entry, st->st_size);
+  archive_entry_set_size (entry, len);
   archive_entry_set_filetype (entry, type);
   archive_entry_set_perm (entry, st->st_mode & 07777);
+  if (type == AE_IFLNK)
+    {
+      ssize_t ret = readlink (path, ar_buffer, BUFFER_SIZE);
+      ar_buffer[ret] = '\0';
+      archive_entry_set_symlink (entry, ar_buffer);
+    }
   archive_write_header (ar, entry);
 
-  file = fopen (path, "rb");
-  fseek (file, 0, SEEK_END);
-  len = ftell (file);
-  rewind (file);
-  buffer = xmalloc (len);
-  fread (buffer, 1, len, file);
-  archive_write_data (ar, buffer, len);
-  free (buffer);
-  fclose (file);
+  if (len && type != AE_IFLNK)
+    {
+      int fd = open (path, O_RDONLY | O_SYMLINK);
+      if (fd == -1)
+	error (1, errno, "open() archive: /%s", name);
+      while (len)
+	{
+	  ssize_t ret = read (fd, ar_buffer, BUFFER_SIZE);
+	  if (ret == -1)
+	    error (1, errno, "read() archive: /%s", name);
+	  archive_write_data (ar, ar_buffer, ret);
+	  len -= ret;
+	}
+      close (fd);
+    }
   archive_entry_free (entry);
   return 0;
 }
@@ -166,12 +185,13 @@ pkg_extract (struct package *package)
 {
   struct archive *ar;
   struct archive *ext;
-  char dir[] = "/tmp/dpm.XXXXXX";
+  char *dir = xstrdup ("/tmp/dpm.XXXXXX");
   int ret;
 
   mkdtemp (dir);
   if (chdir (dir) == -1)
-    error (1, errno, "failed to change directory");
+    error (1, errno, "chdir()");
+  package->extract_dir = dir;
 
   ar = archive_read_new ();
   archive_read_support_format_all (ar);
@@ -246,21 +266,103 @@ pkg_archive (char *data_path)
   char *version = read_file_string (".dpm/Version");
   char *filename;
 
-  asprintf (&filename, "%s-%s.dpm", name, version);
+  asprintf (&filename, "%s/%s-%s.dpm", output_dir, name, version);
   free (name);
   free (version);
 
   ar = archive_write_new ();
   archive_write_set_format_cpio (ar);
-  archive_write_open_filename (ar, filename);
+  if (archive_write_open_filename (ar, filename) != ARCHIVE_OK)
+    error (1, archive_errno (ar), "failed to create archive");
   free (filename);
 
   AR_ENT (add_archive_entry (ar, NULL, AE_IFREG, "Name", ".dpm/Name"));
   AR_ENT (add_archive_entry (ar, NULL, AE_IFREG, "Version", ".dpm/Version"));
-  AR_ENT (add_archive_entry (ar, NULL, AE_IFREG, "Depends", ".dpm/Depends"));
   AR_ENT (add_archive_entry (ar, NULL, AE_IFREG, "Makefile", ".dpm/Makefile"));
   AR_ENT (add_archive_entry (ar, NULL, AE_IFREG, "Data", data_path));
+  add_archive_entry (ar, NULL, AE_IFREG, "Depends", ".dpm/Depends");
 
   archive_write_close (ar);
   archive_write_free (ar);
+}
+
+int
+pkg_stack_contains (const char *name)
+{
+  size_t i;
+  for (i = 0; i < package_stack.len; i++)
+    {
+      if (!strcmp (package_stack.packages[i]->name, name))
+	return 1;
+    }
+  return 0;
+}
+
+void
+pkg_process_req (struct package_req *req)
+{
+  struct package *package;
+  printf ("\033[1mProcessing package: \033[33m%s\033[0m\n", req->name);
+  package = repo_search_package (req);
+  if (!package)
+    error (1, 0, "failed to find package: %s", req->name);
+
+  pkg_extract (package);
+  fclose (package->archive);
+
+  pkg_resolve_dependencies (package->name);
+  pkg_stack_insert (package);
+}
+
+void
+pkg_resolve_dependencies (const char *name)
+{
+  FILE *file = fopen ("Depends", "r");
+  char *line = NULL;
+  size_t len = 0;
+  if (!file)
+    return;
+  while (getline (&line, &len, file) != EOF)
+    {
+      size_t end = strlen (line) - 1;
+      if (line[end] == '\n')
+	line[end] = '\0';
+      printf ("Processing dependency of \033[33m%s\033[0m: "
+	      "\033[33;1m%s\033[0m\n", name, line);
+      if (!pkg_stack_contains (line))
+	{
+	  struct package_req req;
+	  req.name = line;
+	  req.version = NULL;
+	  pkg_process_req (&req);
+	  free (req.version);
+	}
+    }
+  free (line);
+}
+
+void
+pkg_stack_insert (struct package *package)
+{
+  package_stack.packages =
+    xrealloc (package_stack.packages,
+	      sizeof (struct package *) * ++package_stack.len);
+  package_stack.packages[package_stack.len - 1] = package;
+}
+
+void
+pkg_stack_install (void)
+{
+  size_t i;
+  for (i = 0; i < package_stack.len; i++)
+    {
+      struct package *package = package_stack.packages[i];
+      if (chdir (package->extract_dir) == -1)
+	error (1, errno, "chdir()");
+
+      free (package->name);
+      free (package->version);
+      free (package->extract_dir);
+      free (package);
+    }
 }

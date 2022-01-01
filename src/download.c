@@ -19,9 +19,11 @@
 #endif
 
 #include <curl/curl.h>
+#include <human.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <unistd.h>
 #include <xalloc.h>
 #include "download.h"
 
@@ -32,7 +34,7 @@ struct buffer_mem
 };
 
 static size_t
-download_buffer_callback (void *data, size_t size, size_t block, void *user)
+buffer_callback (void *data, size_t size, size_t block, void *user)
 {
   struct buffer_mem *mem = user;
   size_t real = size * block;
@@ -42,37 +44,66 @@ download_buffer_callback (void *data, size_t size, size_t block, void *user)
   return real;
 }
 
+static int
+progress_callback (void *data, curl_off_t dltotal, curl_off_t dlnow,
+		   curl_off_t ultotal, curl_off_t ulnow)
+{
+  static char dlnow_buffer[16];
+  static char dltotal_buffer[16];
+  int opts = human_round_to_nearest | human_base_1024 | human_SI;
+  int bars;
+  int i;
+  if (dltotal == 0)
+    return 0;
+  bars = dlnow * 20 / dltotal;
+  printf ("Downloading  \033[1m[\033[32;1m");
+  for (i = 0; i < bars; i++)
+    putchar ('=');
+  printf ("\033[0m");
+  for (; i < 20; i++)
+    putchar ('-');
+  printf ("\033[1m]\033[0m  %s/%-10s\r",
+	  human_readable (dlnow, dlnow_buffer, opts, 1, 1024),
+	  human_readable (dltotal, dltotal_buffer, opts, 1, 1024));
+  fflush (stdout);
+  return 0;
+}
+
 CURLcode
-download_data (void *data, const char *url,
-	       size_t (*callback) (void *, size_t, size_t, void *))
+download_to_file (FILE *file, const char *url)
 {
   CURL *curl = curl_easy_init ();
   CURLcode ret;
   if (!curl)
     return CURLE_FAILED_INIT;
   curl_easy_setopt (curl, CURLOPT_URL, url);
-  curl_easy_setopt (curl, CURLOPT_WRITEFUNCTION, callback);
-  curl_easy_setopt (curl, CURLOPT_WRITEDATA, data);
+  curl_easy_setopt (curl, CURLOPT_WRITEFUNCTION, NULL);
+  curl_easy_setopt (curl, CURLOPT_WRITEDATA, file);
+  curl_easy_setopt (curl, CURLOPT_XFERINFOFUNCTION, progress_callback);
+  curl_easy_setopt (curl, CURLOPT_NOPROGRESS, 0);
   curl_easy_setopt (curl, CURLOPT_USERAGENT, "libcurl-agent/1.0");
   ret = curl_easy_perform (curl);
   curl_easy_cleanup (curl);
+  putchar ('\n');
   return ret;
-}
-
-CURLcode
-download_to_file (FILE *file, const char *url)
-{
-  return download_data (file, url, NULL);
 }
 
 CURLcode
 download_to_buffer (void **buffer, const char *url)
 {
+  CURL *curl = curl_easy_init ();
   struct buffer_mem mem;
   CURLcode ret;
   mem.data = xmalloc (1);
   mem.size = 0;
-  ret = download_data (&mem, url, download_buffer_callback);
+  if (!curl)
+    return CURLE_FAILED_INIT;
+  curl_easy_setopt (curl, CURLOPT_URL, url);
+  curl_easy_setopt (curl, CURLOPT_WRITEFUNCTION, buffer_callback);
+  curl_easy_setopt (curl, CURLOPT_WRITEDATA, &mem);
+  curl_easy_setopt (curl, CURLOPT_USERAGENT, "libcurl-agent/1.0");
+  ret = curl_easy_perform (curl);
+  curl_easy_cleanup (curl);
   if (ret != CURLE_OK)
     return ret;
   *buffer = mem.data;

@@ -41,6 +41,7 @@ struct package
   char *name;
   char *version;
   FILE *archive;
+  char *extract_dir;
 };
 
 struct package_stack
@@ -51,6 +52,7 @@ struct package_stack
 
 extern struct package_req **packages;
 extern struct package_stack package_stack;
+extern char *output_dir;
 extern int sys_version;
 
 void remove_dir (const char *dir);
@@ -58,6 +60,11 @@ void remove_dir (const char *dir);
 void pkg_extract (struct package *package);
 char *pkg_archive_data (char *destdir);
 void pkg_archive (char *data_path);
+
+void pkg_process_req (struct package_req *req);
+void pkg_resolve_dependencies (const char *name);
+void pkg_stack_insert (struct package *package);
+void pkg_stack_install (void);
 
 void pkg_install (void);
 void pkg_configure (void);

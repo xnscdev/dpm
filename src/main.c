@@ -22,7 +22,6 @@
 #include <getopt.h>
 #include <stdlib.h>
 #include <string.h>
-#include <unistd.h>
 #include <xalloc.h>
 #include "package.h"
 #include "version.h"
@@ -34,6 +33,7 @@ static const struct option longopts[] = {
   {"dist", no_argument, NULL, 'd'},
   {"help", no_argument, NULL, 'h'},
   {"install", no_argument, NULL, 'i'},
+  {"output", required_argument, NULL, 'o'},
   {"sysversion", required_argument, NULL, 's'},
   {"version", no_argument, NULL, 'v'},
   {"clean", no_argument, NULL, 'x'},
@@ -44,17 +44,14 @@ static const struct option longopts[] = {
 static void
 error_prefix (void)
 {
-  if (isatty (STDERR_FILENO))
-    fprintf (stderr, "\033[31;1mError:\033[0m ");
-  else
-    fprintf (stderr, "Error: ");
+  fprintf (stderr, "\033[31;1mError:\033[0m ");
 }
 
 static void
 usage (void)
 {
   fprintf (stderr, "Usage: dpm [-i] PACKAGES\n"
-	   "       dpm [-a ARCH] [-s VERSION] [-bcdhvxX]\n");
+	   "       dpm [-a ARCH] [-s VERSION] [-o DIR] [-bcdhvxX]\n");
 }
 
 static void
@@ -78,7 +75,8 @@ main (int argc, char **argv)
     }
   default_version ();
   default_arch ();
-  while ((opt = getopt_long (argc, argv, "a:bcdhis:vxX", longopts, NULL)) != -1)
+  while ((opt = getopt_long (argc, argv, "a:bcdhio:s:vxX", longopts, NULL))
+	 != -1)
     {
       switch (opt)
 	{
@@ -86,19 +84,22 @@ main (int argc, char **argv)
 	  strncpy (arch, optarg, sizeof (arch) - 1);
 	  break;
 	case 'b':
-	  pkg_build ();
-	  exit (0);
+	  pkg_option = PKG_BUILD;
+	  break;
 	case 'c':
-	  pkg_configure ();
-	  exit (0);
+	  pkg_option = PKG_CONFIGURE;
+	  break;
 	case 'd':
-	  pkg_dist ();
-	  exit (0);
+	  pkg_option = PKG_DIST;
+	  break;
 	case 'h':
 	  usage ();
 	  exit (0);
 	case 'i':
 	  pkg_option = PKG_INSTALL;
+	  break;
+	case 'o':
+	  output_dir = optarg;
 	  break;
 	case 's':
 	  parse_version (optarg);
@@ -107,17 +108,19 @@ main (int argc, char **argv)
 	  version ();
 	  exit (0);
 	case 'x':
-	  pkg_clean ();
-	  exit (0);
+	  pkg_option = PKG_CLEAN;
+	  break;
 	case 'X':
-	  pkg_distclean ();
-	  exit (0);
+	  pkg_option = PKG_DISTCLEAN;
+	  break;
 	default:
 	  err = 1;
 	}
     }
   if (err)
     exit (1);
+  if (!output_dir || !*output_dir)
+    output_dir = ".";
 
   argc -= optind;
   argv += optind;
@@ -134,8 +137,23 @@ main (int argc, char **argv)
 
   switch (pkg_option)
     {
+    case PKG_BUILD:
+      pkg_build ();
+      break;
+    case PKG_CONFIGURE:
+      pkg_configure ();
+      break;
+    case PKG_DIST:
+      pkg_dist ();
+      break;
     case PKG_INSTALL:
       pkg_install ();
+      break;
+    case PKG_CLEAN:
+      pkg_clean ();
+      break;
+    case PKG_DISTCLEAN:
+      pkg_distclean ();
       break;
     }
   return 0;

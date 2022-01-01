@@ -32,18 +32,10 @@ pkg_install (void)
   repo_load ();
   for (i = 0; packages[i]; i++)
     {
-      struct package *package = repo_search_package (packages[i]);
-      if (!package)
-	error (1, 0, "failed to find package: %s", packages[i]->name);
+      pkg_process_req (packages[i]);
       free (packages[i]->name);
       free (packages[i]->version);
       free (packages[i]);
-
-      pkg_extract (package);
-      fclose (package->archive);
-
-      free (package->name);
-      free (package->version);
-      free (package);
     }
+  pkg_stack_install ();
 }
