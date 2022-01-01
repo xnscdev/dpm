@@ -27,6 +27,7 @@
 #include "download.h"
 #include "package.h"
 #include "repo.h"
+#include "version.h"
 
 #define REPO_LIST_PATH CONFIG_DIR "/repo"
 
@@ -71,7 +72,8 @@ repo_search_package (struct package_req *req)
 	  char *latesturl;
 	  char *buffer;
 	  size_t len;
-	  asprintf (&latesturl, "%s/%s/LATEST", repo_list[i], req->name);
+	  asprintf (&latesturl, "%s/%s/%d/%s/LATEST", repo_list[i],
+		    arch, kernel_version, req->name);
 	  ret = download_to_buffer ((void **) &buffer, latesturl);
 	  free (latesturl);
 	  if (ret != CURLE_OK)
@@ -85,8 +87,8 @@ repo_search_package (struct package_req *req)
 	  req->version = buffer;
 	}
 
-      asprintf (&url, "%s/%s/%s-%s.dpm", repo_list[i], req->name,
-		req->name, req->version);
+      asprintf (&url, "%s/%s/%d/%s/%s-%s.dpm", repo_list[i],
+		arch, kernel_version, req->name, req->name, req->version);
       ret = download_to_file (archive, url);
       free (url);
       if (ret != CURLE_OK)
