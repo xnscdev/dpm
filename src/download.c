@@ -41,6 +41,7 @@ buffer_callback (void *data, size_t size, size_t block, void *user)
   mem->data = xrealloc (mem->data, mem->size + real + 1);
   memcpy (mem->data + mem->size, data, real);
   mem->size += real;
+  mem->data[mem->size] = '\0';
   return real;
 }
 
