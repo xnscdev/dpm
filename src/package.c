@@ -22,6 +22,7 @@
 #include <archive_entry.h>
 #include <errno.h>
 #include <error.h>
+#include <ftw.h>
 #include <stdlib.h>
 #include "package.h"
 
@@ -51,6 +52,22 @@ archive_copy_data (struct archive *ar, struct archive *aw)
       if (ret < ARCHIVE_OK)
 	return ret;
     }
+}
+
+static int
+remove_dir_callback (const char *path, const struct stat *st, int type,
+		     struct FTW *ftw)
+{
+  int ret = remove (path);
+  if (ret == -1)
+    error (0, errno, "remove %s", path);
+  return ret;
+}
+
+void
+remove_dir (const char *dir)
+{
+  nftw (dir, remove_dir_callback, 64, FTW_DEPTH | FTW_PHYS);
 }
 
 void

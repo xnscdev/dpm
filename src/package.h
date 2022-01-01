@@ -21,7 +21,13 @@
 
 enum pkg_op
 {
-  PKG_INSTALL
+  PKG_INSTALL,
+  PKG_CONFIGURE,
+  PKG_BUILD,
+  PKG_CLEAN,
+  PKG_DISTCLEAN,
+  PKG_POSTINSTALL,
+  PKG_DIST
 };
 
 struct package_req
@@ -46,7 +52,15 @@ struct package_stack
 extern struct package_req **packages;
 extern struct package_stack package_stack;
 
+void remove_dir (const char *dir);
+
 void pkg_extract (struct package *package);
 void pkg_install (void);
+void pkg_configure (void);
+void pkg_build (void);
+void pkg_clean (void);
+void pkg_distclean (void);
+void pkg_postinstall (void);
+void pkg_dist (void);
 
 #endif

@@ -29,6 +29,8 @@
 #include "package.h"
 #include "repo.h"
 
+#define REPO_LIST_PATH CONFIG_DIR "/repo"
+
 static char **repo_list;
 static size_t repo_count;
 static int sys_version;
@@ -86,7 +88,6 @@ repo_search_package (struct package_req *req)
 	  free (latesturl);
 	  if (ret != CURLE_OK)
 	    {
-	      free (buffer);
 	      fclose (archive);
 	      return NULL;
 	    }

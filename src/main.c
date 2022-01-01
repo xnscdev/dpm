@@ -22,20 +22,34 @@
 #include <getopt.h>
 #include <stdlib.h>
 #include <string.h>
+#include <unistd.h>
 #include <xalloc.h>
 #include "package.h"
 
 static const struct option longopts[] = {
+  {"build", no_argument, NULL, 'b'},
+  {"configure", no_argument, NULL, 'c'},
   {"help", no_argument, NULL, 'h'},
   {"install", no_argument, NULL, 'i'},
   {"version", no_argument, NULL, 'v'},
+  {"clean", no_argument, NULL, 'x'},
+  {"distclean", no_argument, NULL, 'X'},
   {NULL, 0, NULL, 0}
 };
 
 static void
+error_prefix (void)
+{
+  if (isatty (STDERR_FILENO))
+    fprintf (stderr, "\033[31;1mError:\033[0m ");
+  else
+    fprintf (stderr, "Error: ");
+}
+
+static void
 usage (void)
 {
-  fprintf (stderr, "Usage: dpm [-i] PACKAGES\n       dpm [-h | -v]\n");
+  fprintf (stderr, "Usage: dpm [-bcixX] PACKAGES\n       dpm [-h | -v]\n");
 }
 
 static void
@@ -47,18 +61,25 @@ version (void)
 int
 main (int argc, char **argv)
 {
-  enum pkg_op pkg_option;
+  enum pkg_op pkg_option = PKG_INSTALL;
   int opt;
   int i;
+  error_print_progname = error_prefix;
   if (argc == 1)
     {
       usage ();
       exit (1);
     }
-  while ((opt = getopt_long (argc, argv, "hiv", longopts, NULL)) != -1)
+  while ((opt = getopt_long (argc, argv, "bchivxX", longopts, NULL)) != -1)
     {
       switch (opt)
 	{
+	case 'b':
+	  pkg_build ();
+	  exit (0);
+	case 'c':
+	  pkg_configure ();
+	  exit (0);
 	case 'h':
 	  usage ();
 	  exit (0);
@@ -67,6 +88,12 @@ main (int argc, char **argv)
 	  break;
 	case 'v':
 	  version ();
+	  exit (0);
+	case 'x':
+	  pkg_clean ();
+	  exit (0);
+	case 'X':
+	  pkg_distclean ();
 	  exit (0);
 	}
     }

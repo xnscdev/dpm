@@ -20,8 +20,12 @@ AS_HELP_STRING([--with-config-dir=DIR], [Directory for configuration files]),
 	;;
 esac], [adl_RECURSIVE_EVAL([$sysconfdir/dpm], [config_dir])])
 
-AC_DEFINE_UNQUOTED([REPO_LIST_PATH], ["$config_dir/repo"],
+AC_DEFINE_UNQUOTED([CONFIG_DIR], ["$config_dir"],
 [Path to the repository list file])
+
+adl_RECURSIVE_EVAL([$datadir/dpm], [data_dir])
+AC_DEFINE_UNQUOTED([DATA_DIR], ["$data_dir"],
+[Path to the package data directory])
 
 PKG_CHECK_MODULES([LIBARCHIVE], [libarchive >= 3.0])
 AC_SUBST([LIBARCHIVE_CFLAGS])
@@ -31,5 +35,5 @@ PKG_CHECK_MODULES([CURL], [libcurl])
 AC_SUBST([CURL_CFLAGS])
 AC_SUBST([CURL_LIBS])
 
-AC_CONFIG_FILES([Makefile lib/Makefile src/Makefile])
+AC_CONFIG_FILES([Makefile aux/Makefile lib/Makefile src/Makefile])
 AC_OUTPUT
