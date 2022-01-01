@@ -8,7 +8,8 @@ MKVPATHDIR = mkdir -p $(VPATH_DIR) && cd $(VPATH_DIR) &&
 endif
 
 configure:
-	$(MKVPATHDIR) $(srcdir_rel)/configure $(CONFIGURE_OPTIONS)
+	$(MKVPATHDIR) $(srcdir_rel)/configure --host=$(GNU_TRIPLET) \
+	    $(CONFIGURE_OPTIONS)
 
 build:
 	$(MKVPATHDIR) $(MAKE) $(BUILD_TARGET)
@@ -21,6 +22,10 @@ distclean:
 
 install:
 	$(MKVPATHDIR) $(MAKE) install
+	for dir in $(DESTDIR)/usr/local/share/info \
+	    $(patsubst %,$(DESTDIR)%,$(INFO_DIRS)); do \
+	    rm -f $$dir/dir; \
+	done
 
 postinstall:
 	for dir in /usr/local/share/info $(INFO_DIRS); \

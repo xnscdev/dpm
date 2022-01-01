@@ -25,12 +25,16 @@
 #include <unistd.h>
 #include <xalloc.h>
 #include "package.h"
+#include "version.h"
 
 static const struct option longopts[] = {
+  {"arch", required_argument, NULL, 'a'},
   {"build", no_argument, NULL, 'b'},
   {"configure", no_argument, NULL, 'c'},
+  {"dist", no_argument, NULL, 'd'},
   {"help", no_argument, NULL, 'h'},
   {"install", no_argument, NULL, 'i'},
+  {"sysversion", required_argument, NULL, 's'},
   {"version", no_argument, NULL, 'v'},
   {"clean", no_argument, NULL, 'x'},
   {"distclean", no_argument, NULL, 'X'},
@@ -49,7 +53,8 @@ error_prefix (void)
 static void
 usage (void)
 {
-  fprintf (stderr, "Usage: dpm [-bcixX] PACKAGES\n       dpm [-h | -v]\n");
+  fprintf (stderr, "Usage: dpm [-i] PACKAGES\n"
+	   "       dpm [-a ARCH] [-s VERSION] [-bcdhvxX]\n");
 }
 
 static void
@@ -62,6 +67,7 @@ int
 main (int argc, char **argv)
 {
   enum pkg_op pkg_option = PKG_INSTALL;
+  int err = 0;
   int opt;
   int i;
   error_print_progname = error_prefix;
@@ -70,21 +76,32 @@ main (int argc, char **argv)
       usage ();
       exit (1);
     }
-  while ((opt = getopt_long (argc, argv, "bchivxX", longopts, NULL)) != -1)
+  default_version ();
+  default_arch ();
+  while ((opt = getopt_long (argc, argv, "a:bcdhis:vxX", longopts, NULL)) != -1)
     {
       switch (opt)
 	{
+	case 'a':
+	  strncpy (arch, optarg, sizeof (arch) - 1);
+	  break;
 	case 'b':
 	  pkg_build ();
 	  exit (0);
 	case 'c':
 	  pkg_configure ();
 	  exit (0);
+	case 'd':
+	  pkg_dist ();
+	  exit (0);
 	case 'h':
 	  usage ();
 	  exit (0);
 	case 'i':
 	  pkg_option = PKG_INSTALL;
+	  break;
+	case 's':
+	  parse_version (optarg);
 	  break;
 	case 'v':
 	  version ();
@@ -95,8 +112,12 @@ main (int argc, char **argv)
 	case 'X':
 	  pkg_distclean ();
 	  exit (0);
+	default:
+	  err = 1;
 	}
     }
+  if (err)
+    exit (1);
 
   argc -= optind;
   argv += optind;

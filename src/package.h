@@ -51,10 +51,14 @@ struct package_stack
 
 extern struct package_req **packages;
 extern struct package_stack package_stack;
+extern int sys_version;
 
 void remove_dir (const char *dir);
 
 void pkg_extract (struct package *package);
+char *pkg_archive_data (char *destdir);
+void pkg_archive (char *data_path);
+
 void pkg_install (void);
 void pkg_configure (void);
 void pkg_build (void);

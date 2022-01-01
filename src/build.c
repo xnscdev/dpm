@@ -27,6 +27,7 @@
 #include <xalloc.h>
 #include "package.h"
 #include "repo.h"
+#include "version.h"
 
 #define DPM_MAKE_DIR DATA_DIR "/make"
 
@@ -42,16 +43,26 @@ run_makefile_task (const char *target)
 {
   pid_t pid = fork ();
   int status;
+  int ret;
   if (pid == -1)
     error (1, errno, "fork()");
   else if (!pid)
     {
-      execlp ("make", "make", "-I", DPM_MAKE_DIR, "-f", ".dpm/Makefile",
+      char *macos_version_flag;
+      char *kernel_version_flag;
+      char *arch_flag;
+      asprintf (&macos_version_flag, "MACOS_VERSION=%s", macos_version);
+      asprintf (&kernel_version_flag, "KERNEL_VERSION=%d", kernel_version);
+      asprintf (&arch_flag, "ARCH=%s", arch);
+      execlp ("make", "make", macos_version_flag, kernel_version_flag,
+	      arch_flag, "-I", DPM_MAKE_DIR, "-f", ".dpm/Makefile",
 	      target, NULL);
       error (1, errno, "exec()");
     }
 
-  waitpid (pid, &status, 0);
+  do
+    ret = waitpid (pid, &status, 0);
+  while (ret == -1 && errno == EINTR);
   if (WIFEXITED (status) && WEXITSTATUS (status))
     error (1, 0, "child process exited with code %d", WEXITSTATUS (status));
   else if (WIFSIGNALED (status))
@@ -64,18 +75,30 @@ install_destdir (void)
   char *destdir = xstrdup ("/tmp/dpm.destdir.XXXXXX");
   pid_t pid;
   int status;
+  int ret;
   mkdtemp (destdir);
   pid = fork ();
   if (pid == -1)
     error (1, errno, "fork()");
   else if (!pid)
     {
-      execlp ("make", "make", destdir, "-I", DPM_MAKE_DIR,
+      char *macos_version_flag;
+      char *kernel_version_flag;
+      char *arch_flag;
+      char *destdir_flag;
+      asprintf (&macos_version_flag, "MACOS_VERSION=%s", macos_version);
+      asprintf (&kernel_version_flag, "KERNEL_VERSION=%d", kernel_version);
+      asprintf (&arch_flag, "ARCH=%s", arch);
+      asprintf (&destdir_flag, "DESTDIR=%s", destdir);
+      execlp ("make", "make", macos_version_flag, kernel_version_flag,
+	      arch_flag, destdir_flag, "-I", DPM_MAKE_DIR,
 	      "-f", ".dpm/Makefile", "install", NULL);
       error (1, errno, "exec()");
     }
 
-  waitpid (pid, &status, 0);
+  do
+    ret = waitpid (pid, &status, 0);
+  while (ret == -1 && errno == EINTR);
   if (WIFEXITED (status) && WEXITSTATUS (status))
     error (1, 0, "child process exited with code %d", WEXITSTATUS (status));
   else if (WIFSIGNALED (status))
@@ -120,6 +143,13 @@ pkg_postinstall (void)
 void
 pkg_dist (void)
 {
-  char *destdir = install_destdir ();
+  char *destdir;
+  char *data_path;
+  pkg_build ();
+  destdir = install_destdir ();
+  data_path = pkg_archive_data (destdir);
+  remove_dir (destdir);
   free (destdir);
+  pkg_archive (data_path);
+  remove (data_path);
 }

@@ -18,7 +18,6 @@
 #include <config.h>
 #endif
 
-#include <sys/utsname.h>
 #include <errno.h>
 #include <error.h>
 #include <stdio.h>
@@ -33,16 +32,6 @@
 
 static char **repo_list;
 static size_t repo_count;
-static int sys_version;
-
-static void
-get_sys_version (void)
-{
-  struct utsname buffer;
-  if (uname (&buffer) == -1)
-    error (1, errno, "failed to determine system version");
-  sys_version = strtol (buffer.release, NULL, 10);
-}
 
 void
 repo_load (void)
@@ -52,7 +41,6 @@ repo_load (void)
   size_t len = 0;
   if (!file)
     error (1, errno, "failed to open repository list: " REPO_LIST_PATH);
-  get_sys_version ();
   while (getline (&line, &len, file) != EOF)
     {
       size_t i = strlen (line) - 1;
