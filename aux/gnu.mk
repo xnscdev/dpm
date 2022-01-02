@@ -28,7 +28,7 @@ install:
 	done
 
 postinstall:
-	for dir in /usr/local/share/info $(INFO_DIRS); \
+	for dir in /usr/local/share/info $(INFO_DIRS); do \
 	    for f in $$dir/*.info; do \
 		install-info --dir-file=$$dir/dir $$f; \
 	    done; \

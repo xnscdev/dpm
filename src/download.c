@@ -51,7 +51,8 @@ progress_callback (void *data, curl_off_t dltotal, curl_off_t dlnow,
 {
   static char dlnow_buffer[16];
   static char dltotal_buffer[16];
-  int opts = human_round_to_nearest | human_base_1024 | human_SI;
+  int opts =
+    human_round_to_nearest | human_base_1024 | human_autoscale | human_SI;
   int bars;
   int i;
   if (dltotal == 0)
@@ -64,8 +65,8 @@ progress_callback (void *data, curl_off_t dltotal, curl_off_t dlnow,
   for (; i < 20; i++)
     putchar ('-');
   printf ("\033[1m]\033[0m  %s/%-10s\r",
-	  human_readable (dlnow, dlnow_buffer, opts, 1, 1024),
-	  human_readable (dltotal, dltotal_buffer, opts, 1, 1024));
+	  human_readable (dlnow, dlnow_buffer, opts, 1, 1),
+	  human_readable (dltotal, dltotal_buffer, opts, 1, 1));
   fflush (stdout);
   return 0;
 }

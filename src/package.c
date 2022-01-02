@@ -436,6 +436,8 @@ pkg_stack_install (void)
       chdir ("/");
       remove_dir (package->extract_dir);
 
+      printf ("\033[33;1m%s\033[0m version \033[32m%s\033[0m "
+	      "successfully installed\n", package->name, package->version);
       free (package->name);
       free (package->version);
       free (package->extract_dir);
