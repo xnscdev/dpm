@@ -40,13 +40,13 @@ repo_load (void)
   FILE *file = fopen (REPO_LIST_PATH, "r");
   char *line = NULL;
   size_t len = 0;
+  ssize_t size;
   if (!file)
     error (1, errno, "failed to open repository list: " REPO_LIST_PATH);
-  while (getline (&line, &len, file) != EOF)
+  while ((size = getline (&line, &len, file)) != EOF)
     {
-      size_t i = strlen (line) - 1;
-      if (line[i] == '\n')
-	line[i] = '\0';
+      if (line[size - 1] == '\n')
+	line[size - 1] = '\0';
       repo_count++;
       repo_list = xrealloc (repo_list, sizeof (char *) * repo_count);
       repo_list[repo_count - 1] = xstrdup (line);

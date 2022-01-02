@@ -29,6 +29,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <xalloc.h>
+#include "list.h"
 #include "package.h"
 #include "repo.h"
 
@@ -302,7 +303,17 @@ void
 pkg_process_req (struct package_req *req)
 {
   struct package *package;
+  char *installed_version;
   printf ("\033[1mProcessing package: \033[33m%s\033[0m\n", req->name);
+
+  installed_version = check_pkg_installed (req->name);
+  if (installed_version)
+    {
+      printf ("\033[33;1m%s\033[0m version \033[32m%s\033[0m "
+	      "already installed\n", req->name, installed_version);
+      return;
+    }
+
   package = repo_search_package (req);
   if (!package)
     error (1, 0, "failed to find package: %s", req->name);
@@ -320,13 +331,13 @@ pkg_resolve_dependencies (const char *name)
   FILE *file = fopen ("Depends", "r");
   char *line = NULL;
   size_t len = 0;
+  ssize_t size;
   if (!file)
     return;
-  while (getline (&line, &len, file) != EOF)
+  while ((size = getline (&line, &len, file)) != EOF)
     {
-      size_t end = strlen (line) - 1;
-      if (line[end] == '\n')
-	line[end] = '\0';
+      if (line[size - 1] == '\n')
+	line[size - 1] = '\0';
       printf ("Processing dependency of \033[33m%s\033[0m: "
 	      "\033[33;1m%s\033[0m\n", name, line);
       if (!pkg_stack_contains (line))

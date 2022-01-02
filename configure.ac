@@ -21,11 +21,15 @@ AS_HELP_STRING([--with-config-dir=DIR], [Directory for configuration files]),
 esac], [adl_RECURSIVE_EVAL([$sysconfdir/dpm], [config_dir])])
 
 AC_DEFINE_UNQUOTED([CONFIG_DIR], ["$config_dir"],
-[Path to the repository list file])
+[Path to the directory to store configuration files])
 
 adl_RECURSIVE_EVAL([$datadir/dpm], [data_dir])
 AC_DEFINE_UNQUOTED([DATA_DIR], ["$data_dir"],
 [Path to the package data directory])
+
+adl_RECURSIVE_EVAL([$localstatedir/dpm], [list_dir])
+AC_DEFINE_UNQUOTED([LIST_DIR], ["$list_dir"],
+[Path to the directory to store installed package info])
 
 PKG_CHECK_MODULES([LIBARCHIVE], [libarchive >= 3.0])
 AC_SUBST([LIBARCHIVE_CFLAGS])

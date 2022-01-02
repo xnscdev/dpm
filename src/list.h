@@ -1,4 +1,4 @@
-/* install.c -- This file is part of DPM.
+/* list.h -- This file is part of DPM.
    Copyright (C) 2021 XNSC
 
    DPM is free software: you can redistribute it and/or modify
@@ -14,30 +14,21 @@
    You should have received a copy of the GNU General Public License
    along with DPM. If not, see <https://www.gnu.org/licenses/>. */
 
-#ifdef HAVE_CONFIG_H
-#include <config.h>
-#endif
+#ifndef __LIST_H
+#define __LIST_H
 
-#include <error.h>
-#include <stdlib.h>
-#include "list.h"
-#include "package.h"
-#include "repo.h"
+#include <stddef.h>
 
-void
-pkg_install (void)
+struct pkg_list
 {
-  int i;
-  if (!*packages)
-    error (1, 0, "no packages specified");
-  repo_load ();
-  load_installed_pkgs ();
-  for (i = 0; packages[i]; i++)
-    {
-      pkg_process_req (packages[i]);
-      free (packages[i]->name);
-      free (packages[i]->version);
-      free (packages[i]);
-    }
-  pkg_stack_install ();
-}
+  char **names;
+  char **versions;
+  size_t len;
+};
+
+extern struct pkg_list installed_pkgs;
+
+void load_installed_pkgs (void);
+char *check_pkg_installed (const char *name);
+
+#endif

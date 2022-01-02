@@ -9,6 +9,8 @@ dpm_SOURCES =		\
 	download.c	\
 	download.h	\
 	install.c	\
+	list.c		\
+	list.h		\
 	main.c		\
 	package.c	\
 	package.h	\
