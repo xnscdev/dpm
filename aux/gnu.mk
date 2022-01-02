@@ -7,27 +7,27 @@ VPATH_DIR ?= build
 MKVPATHDIR = mkdir -p $(VPATH_DIR) && cd $(VPATH_DIR) &&
 endif
 
-configure:
+configure::
 	$(MKVPATHDIR) $(srcdir_rel)/configure --host=$(GNU_TRIPLET) \
 	    $(CONFIGURE_OPTIONS)
 
-build:
+build::
 	$(MKVPATHDIR) $(MAKE) $(BUILD_TARGET)
 
-clean:
+clean::
 	$(MKVPATHDIR) $(MAKE) clean
 
-distclean:
+distclean::
 	$(MKVPATHDIR) $(MAKE) distclean
 
-install:
+install::
 	$(MKVPATHDIR) $(MAKE) install
 	for dir in $(DESTDIR)/usr/local/share/info \
 	    $(patsubst %,$(DESTDIR)%,$(INFO_DIRS)); do \
 	    rm -f $$dir/dir; \
 	done
 
-postinstall:
+postinstall::
 	for dir in /usr/local/share/info $(INFO_DIRS); do \
 	    for f in $$dir/*.info; do \
 		install-info --dir-file=$$dir/dir $$f; \

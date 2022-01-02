@@ -6,19 +6,19 @@ export CXX = xcrun c++ -target $(CC_TARGET)
 export OBJC = xcrun cc -target $(CC_TARGET)
 
 .PHONY: configure
-configure:
+configure::
 
 .PHONY: build
-build:
+build::
 
 .PHONY: clean
-clean:
+clean::
 
 .PHONY: distclean
-distclean:
+distclean::
 
 .PHONY: install
-install:
+install::
 
 .PHONY: postinstall
-postinstall:
+postinstall::
