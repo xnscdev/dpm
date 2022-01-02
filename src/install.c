@@ -40,4 +40,5 @@ pkg_install (void)
       free (packages[i]);
     }
   pkg_stack_install ();
+  save_pkg_install_list ();
 }

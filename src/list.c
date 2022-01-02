@@ -72,3 +72,28 @@ check_pkg_installed (const char *name)
     }
   return NULL;
 }
+
+void
+mark_pkg_installed (const struct package *package)
+{
+  installed_pkgs.len++;
+  installed_pkgs.names =
+    xrealloc (installed_pkgs.names, sizeof (char *) * installed_pkgs.len);
+  installed_pkgs.versions =
+    xrealloc (installed_pkgs.versions, sizeof (char *) * installed_pkgs.len);
+  installed_pkgs.names[installed_pkgs.len - 1] = xstrdup (package->name);
+  installed_pkgs.versions[installed_pkgs.len - 1] = xstrdup (package->version);
+}
+
+void
+save_pkg_install_list (void)
+{
+  FILE *file = fopen (INSTALLED_LIST, "w");
+  size_t i;
+  if (!file)
+    error (1, errno, "failed to update installed package list");
+  for (i = 0; i < installed_pkgs.len; i++)
+    fprintf (file, "%s=%s\n", installed_pkgs.names[i],
+	     installed_pkgs.versions[i]);
+  fclose (file);
+}

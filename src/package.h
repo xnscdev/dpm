@@ -26,7 +26,6 @@ enum pkg_op
   PKG_BUILD,
   PKG_CLEAN,
   PKG_DISTCLEAN,
-  PKG_POSTINSTALL,
   PKG_DIST
 };
 

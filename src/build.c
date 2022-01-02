@@ -39,7 +39,7 @@ touch (const char *path)
 }
 
 static void
-run_makefile_task (const char *target)
+run_makefile_task_file (const char *target, const char *makefile)
 {
   pid_t pid = fork ();
   int status;
@@ -55,8 +55,7 @@ run_makefile_task (const char *target)
       asprintf (&kernel_version_flag, "KERNEL_VERSION=%d", kernel_version);
       asprintf (&arch_flag, "ARCH=%s", arch);
       execlp ("make", "make", macos_version_flag, kernel_version_flag,
-	      arch_flag, "-I", DPM_MAKE_DIR, "-f", ".dpm/Makefile",
-	      target, NULL);
+	      arch_flag, "-I", DPM_MAKE_DIR, "-f", makefile, target, NULL);
       error (1, errno, "exec()");
     }
 
@@ -67,6 +66,12 @@ run_makefile_task (const char *target)
     error (1, 0, "child process exited with code %d", WEXITSTATUS (status));
   else if (WIFSIGNALED (status))
     error (1, 0, "child process received signal %d", WTERMSIG (status));
+}
+
+static void
+run_makefile_task (const char *target)
+{
+  run_makefile_task_file (target, ".dpm/Makefile");
 }
 
 static char *
@@ -137,7 +142,7 @@ pkg_distclean (void)
 void
 pkg_postinstall (void)
 {
-  run_makefile_task ("postinstall");
+  run_makefile_task_file ("postinstall", "Makefile");
 }
 
 void

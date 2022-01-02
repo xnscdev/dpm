@@ -116,3 +116,11 @@
 /xstrtol.h
 /xstrtoul.c
 /xstrtoumax.c
+/calloc.c
+/free.c
+/ialloc.c
+/ialloc.h
+/idx.h
+/malloc.c
+/realloc.c
+/reallocarray.c

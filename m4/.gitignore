@@ -78,3 +78,10 @@
 /wctype_h.m4
 /xalloc.m4
 /xstrtol.m4
+/calloc.m4
+/free.m4
+/malloc.m4
+/realloc.m4
+/reallocarray.m4
+/vararrays.m4
+/year2038.m4

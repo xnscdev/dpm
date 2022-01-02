@@ -362,6 +362,66 @@ pkg_stack_insert (struct package *package)
 }
 
 void
+pkg_extract_data (void)
+{
+  struct archive *ar;
+  struct archive *ext;
+  int fd;
+  int ret;
+
+  ar = archive_read_new ();
+  archive_read_support_format_all (ar);
+  archive_read_support_filter_all (ar);
+  ext = archive_write_disk_new ();
+  archive_write_disk_set_options (ext, ARCHIVE_FLAGS);
+  archive_write_disk_set_standard_lookup (ext);
+  ret = archive_read_open_filename (ar, "Data", 10240);
+  if (ret)
+    error (1, 0, "failed to extract package data: %s",
+	   archive_error_string (ar));
+
+  fd = open (".", O_RDONLY);
+  if (fd == -1)
+    error (1, errno, "open()");
+  if (chdir ("/") == -1)
+    error (1, errno, "chdir()");
+
+  while (1)
+    {
+      struct archive_entry *entry;
+      ret = archive_read_next_header (ar, &entry);
+      if (ret == ARCHIVE_EOF)
+	break;
+      if (ret < ARCHIVE_OK)
+	error (ret < ARCHIVE_WARN, 0, "archive: %s", archive_error_string (ar));
+      ret = archive_write_header (ext, entry);
+      if (ret < ARCHIVE_OK)
+	error (0, 0, "/%s: %s", archive_entry_pathname (entry),
+	       archive_error_string (ext));
+      else if (archive_entry_size (entry) > 0)
+	{
+	  ret = archive_copy_data (ar, ext);
+	  if (ret < ARCHIVE_OK)
+	    error (ret < ARCHIVE_WARN, 0, "/%s: %s",
+		   archive_entry_pathname (entry), archive_error_string (ext));
+	}
+      ret = archive_write_finish_entry (ext);
+      if (ret < ARCHIVE_OK && archive_errno (ext) != EPERM)
+	error (ret < ARCHIVE_WARN, 0, "/%s: %s",
+	       archive_entry_pathname (entry), archive_error_string (ext));
+    }
+
+  archive_read_close (ar);
+  archive_read_free (ar);
+  archive_write_close (ext);
+  archive_write_free (ext);
+
+  if (fchdir (fd) == -1)
+    error (1, errno, "fchdir()");
+  close (fd);
+}
+
+void
 pkg_stack_install (void)
 {
   size_t i;
@@ -370,6 +430,11 @@ pkg_stack_install (void)
       struct package *package = package_stack.packages[i];
       if (chdir (package->extract_dir) == -1)
 	error (1, errno, "chdir()");
+      pkg_extract_data ();
+      pkg_postinstall ();
+      mark_pkg_installed (package);
+      chdir ("/");
+      remove_dir (package->extract_dir);
 
       free (package->name);
       free (package->version);

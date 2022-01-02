@@ -17,7 +17,7 @@
 #ifndef __LIST_H
 #define __LIST_H
 
-#include <stddef.h>
+#include "package.h"
 
 struct pkg_list
 {
@@ -30,5 +30,7 @@ extern struct pkg_list installed_pkgs;
 
 void load_installed_pkgs (void);
 char *check_pkg_installed (const char *name);
+void mark_pkg_installed (const struct package *package);
+void save_pkg_install_list (void);
 
 #endif
