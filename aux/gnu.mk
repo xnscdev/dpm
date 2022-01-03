@@ -19,6 +19,9 @@ clean::
 
 distclean::
 	$(MKVPATHDIR) $(MAKE) distclean
+ifneq ($(USE_VPATH),)
+	rm -rf $(VPATH_DIR)
+endif
 
 install::
 	$(MKVPATHDIR) $(MAKE) install
