@@ -1,30 +1,41 @@
+# This Makefile fragment defines targets that are suitable for a typical
+# package built with GNU autoconf, automake, etc. The following lists the
+# variables that can be set to customize the build process:
+#
+# USE_VPATH         - Whether to do a VPATH build (separate build directory)
+# VPATH_DIR         - Name of the build directory when doing a VPATH build,
+#                     defaults to `build'
+# CONFIGURE_OPTIONS - Additional options to pass to the `./configure' script
+#
+# These variables should be set before including this file.
+
 ifeq ($(USE_VPATH),)
 srcdir_rel = .
-MKVPATHDIR =
+mkvpathdir =
 else
 srcdir_rel = ..
 VPATH_DIR ?= build
-MKVPATHDIR = mkdir -p $(VPATH_DIR) && cd $(VPATH_DIR) &&
+mkvpathdir = mkdir -p $(VPATH_DIR) && cd $(VPATH_DIR) &&
 endif
 
 configure::
-	$(MKVPATHDIR) $(srcdir_rel)/configure --host=$(GNU_TRIPLET) \
+	$(mkvpathdir) $(srcdir_rel)/configure --host=$(GNU_TRIPLET) \
 	    $(CONFIGURE_OPTIONS)
 
 build::
-	$(MKVPATHDIR) $(MAKE) $(BUILD_TARGET)
+	$(mkvpathdir) $(MAKE) $(BUILD_TARGET)
 
 clean::
-	$(MKVPATHDIR) $(MAKE) clean
+	$(mkvpathdir) $(MAKE) clean
 
 distclean::
-	$(MKVPATHDIR) $(MAKE) distclean
+	$(mkvpathdir) $(MAKE) distclean
 ifneq ($(USE_VPATH),)
 	rm -rf $(VPATH_DIR)
 endif
 
 install::
-	$(MKVPATHDIR) $(MAKE) install
+	$(mkvpathdir) $(MAKE) install
 	for dir in $(DESTDIR)/usr/local/share/info \
 	    $(patsubst %,$(DESTDIR)%,$(INFO_DIRS)); do \
 	    rm -f $$dir/dir; \
