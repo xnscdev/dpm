@@ -47,8 +47,15 @@
     }							\
   while (0)
 
+struct dep_stack
+{
+  const char **names;
+  size_t len;
+};
+
 struct package_req **packages;
 struct package_stack package_stack;
+struct dep_stack dep_stack;
 char *output_dir;
 
 static struct archive *curr_archive;
@@ -287,18 +294,6 @@ pkg_archive (char *data_path)
   archive_write_free (ar);
 }
 
-int
-pkg_stack_contains (const char *name)
-{
-  size_t i;
-  for (i = 0; i < package_stack.len; i++)
-    {
-      if (!strcmp (package_stack.packages[i]->name, name))
-	return 1;
-    }
-  return 0;
-}
-
 void
 pkg_process_req (struct package_req *req)
 {
@@ -332,6 +327,7 @@ pkg_resolve_dependencies (const char *name)
   char *line = NULL;
   size_t len = 0;
   ssize_t size;
+  pkg_dep_name_insert (name);
   if (!file)
     return;
   while ((size = getline (&line, &len, file)) != EOF)
@@ -340,7 +336,7 @@ pkg_resolve_dependencies (const char *name)
 	line[size - 1] = '\0';
       printf ("Processing dependency of \033[33m%s\033[0m: "
 	      "\033[33;1m%s\033[0m\n", name, line);
-      if (!pkg_stack_contains (line))
+      if (!pkg_dep_name_contains (line))
 	{
 	  struct package_req req;
 	  req.name = line;
@@ -359,6 +355,26 @@ pkg_stack_insert (struct package *package)
     xrealloc (package_stack.packages,
 	      sizeof (struct package *) * ++package_stack.len);
   package_stack.packages[package_stack.len - 1] = package;
+}
+
+void
+pkg_dep_name_insert (const char *name)
+{
+  dep_stack.names =
+    xrealloc (dep_stack.names, sizeof (const char *) * ++dep_stack.len);
+  dep_stack.names[dep_stack.len - 1] = name;
+}
+
+int
+pkg_dep_name_contains (const char *name)
+{
+  size_t i;
+  for (i = 0; i < dep_stack.len; i++)
+    {
+      if (!strcmp (dep_stack.names[i], name))
+	return 1;
+    }
+  return 0;
 }
 
 void
@@ -406,9 +422,13 @@ pkg_extract_data (void)
 		   archive_entry_pathname (entry), archive_error_string (ext));
 	}
       ret = archive_write_finish_entry (ext);
-      if (ret < ARCHIVE_OK && archive_errno (ext) != EPERM)
-	error (ret < ARCHIVE_WARN, 0, "/%s: %s",
-	       archive_entry_pathname (entry), archive_error_string (ext));
+      if (ret < ARCHIVE_OK)
+	{
+	  int e = archive_errno (ext);
+	  if (e != EPERM && e != EACCES)
+	    error (ret < ARCHIVE_WARN, 0, "/%s: %s",
+		   archive_entry_pathname (entry), archive_error_string (ext));
+	}
     }
 
   archive_read_close (ar);

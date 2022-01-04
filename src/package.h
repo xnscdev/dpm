@@ -63,6 +63,8 @@ void pkg_archive (char *data_path);
 void pkg_process_req (struct package_req *req);
 void pkg_resolve_dependencies (const char *name);
 void pkg_stack_insert (struct package *package);
+void pkg_dep_name_insert (const char *name);
+int pkg_dep_name_contains (const char *name);
 void pkg_stack_install (void);
 
 void pkg_install (void);
