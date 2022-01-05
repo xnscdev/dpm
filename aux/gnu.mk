@@ -19,23 +19,23 @@ mkvpathdir = mkdir -p $(VPATH_DIR) && cd $(VPATH_DIR) &&
 endif
 
 configure::
-	$(mkvpathdir) $(srcdir_rel)/configure --host=$(GNU_TRIPLET) \
+	$(mkvpathdir) $(srcdir_rel)/configure --build=$(GNU_TRIPLET) \
 	    $(CONFIGURE_OPTIONS)
 
 build::
-	$(mkvpathdir) $(MAKE) $(BUILD_TARGET)
+	$(mkvpathdir) $(MAKE) $(GNU_BUILD_OPTIONS) $(BUILD_TARGET)
 
 clean::
-	$(mkvpathdir) $(MAKE) clean
+	$(mkvpathdir) $(MAKE) $(GNU_CLEAN_OPTIONS) clean
 
 distclean::
-	$(mkvpathdir) $(MAKE) distclean
+	$(mkvpathdir) $(MAKE) $(GNU_DISTCLEAN_OPTIONS) distclean
 ifneq ($(USE_VPATH),)
 	rm -rf $(VPATH_DIR)
 endif
 
 install::
-	$(mkvpathdir) $(MAKE) install
+	$(mkvpathdir) $(MAKE) $(GNU_INSTALL_OPTIONS) install
 	for dir in $(DESTDIR)/usr/local/share/info \
 	    $(patsubst %,$(DESTDIR)%,$(INFO_DIRS)); do \
 	    rm -f $$dir/dir; \
