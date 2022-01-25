@@ -8,6 +8,8 @@
 #
 # These variables should be set before including this file.
 
+BUILD_DIR ?= build
+
 mkbuilddir = mkdir -p $(BUILD_DIR) && cd $(BUILD_DIR) &&
 
 configure::

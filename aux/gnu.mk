@@ -5,6 +5,7 @@
 # USE_VPATH         - Whether to do a VPATH build (separate build directory)
 # VPATH_DIR         - Name of the build directory when doing a VPATH build,
 #                     defaults to `build'
+# CONFIGURE_ENV     - Environment variables to pass to the `./configure` script
 # CONFIGURE_OPTIONS - Additional options to pass to the `./configure' script
 #
 # These variables should be set before including this file.
@@ -12,15 +13,17 @@
 ifeq ($(USE_VPATH),)
 srcdir_rel = .
 mkvpathdir =
+clean_fail = -
 else
 srcdir_rel = ..
 VPATH_DIR ?= build
 mkvpathdir = mkdir -p $(VPATH_DIR) && cd $(VPATH_DIR) &&
+clean_fail =
 endif
 
 configure::
-	$(mkvpathdir) $(srcdir_rel)/configure --build=$(GNU_TRIPLET) \
-	    $(CONFIGURE_OPTIONS)
+	$(mkvpathdir) $(CONFIGURE_ENV) $(srcdir_rel)/configure \
+	    --build=$(GNU_TRIPLET) $(CONFIGURE_OPTIONS)
 
 build::
 	$(mkvpathdir) $(MAKE) $(GNU_BUILD_OPTIONS) $(BUILD_TARGET)
@@ -29,7 +32,7 @@ clean::
 	$(mkvpathdir) $(MAKE) $(GNU_CLEAN_OPTIONS) clean
 
 distclean::
-	$(mkvpathdir) $(MAKE) $(GNU_DISTCLEAN_OPTIONS) distclean
+	$(clean_fail)$(mkvpathdir) $(MAKE) $(GNU_DISTCLEAN_OPTIONS) distclean
 ifneq ($(USE_VPATH),)
 	rm -rf $(VPATH_DIR)
 endif
